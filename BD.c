@@ -10,47 +10,52 @@
 #define QUERY_ELIMINAR_PACIENTE "DELETE FROM paciente WHERE codigo_historia_clinica = ?"
 #define QUERY_MOSTRAR_PACIENTE "SELECT * FROM paciente"
 
-#define QUERY_INSERTAR_MEDICO "INSERT INTO medico(codigo_medico, nombre, apellido, especialidad,  tarjeta_profesional) VALUES(?,?,?,?)"
+#define QUERY_INSERTAR_MEDICO "INSERT INTO medico(codigo_medico, nombre, apellido, especialidad,  tarjeta_profesional) VALUES(?,?,?,?,?)"
 #define QUERY_ACTUALIZAR_MEDICO "UPDATE medico SET  tarjeta_profesional = ? WHERE codigo_medico = ?"
 #define QUERY_ELIMINAR_MEDICO "DELETE FROM medico WHERE codigo_medico = ?"
 #define QUERY_MOSTRAR_MEDICO "SELECT * FROM medico"
 
-#define QUERY_INSERTAR_INGRESO "INSERT INTO ingreso(codigo_ingreso, codigo_historia_clinica, codigo_medico, fecha_ingreso,no_piso,no_cama,diagnostico,costo_tratamiento) VALUES(?,?,?,?)"
-#define QUERY_ACTUALIZAR_INGRESO "UPDATE ingreso SET fecha_ingreso = ? WHERE codigo_ingreso = ?"
+#define QUERY_INSERTAR_INGRESO "INSERT INTO ingreso(codigo_ingreso, codigo_historia_clinica, codigo_medico, fecha_ingreso,no_piso,no_cama,diagnostico,costo_tratamiento) VALUES(?,?,?,?,?,?,?,?)"
+#define QUERY_ACTUALIZAR_INGRESO "UPDATE ingreso SET no_cama = ? WHERE codigo_ingreso = ?"
 #define QUERY_ELIMINAR_INGRESO "DELETE FROM ingreso WHERE codigo_ingreso = ?"
 #define QUERY_MOSTRAR_INGRESO "SELECT * FROM ingreso"
-void mostrarTabla(MYSQL *conexion, char *consulta){
-     int error, filas, columnas, i, j;
-     MYSQL_RES *res_ptr;
-MYSQL_FIELD *campo;
-MYSQL_ROW res_fila;
-error = mysql_query(conexion, consulta);
-if (!error){
-res_ptr = mysql_store_result(conexion);
-if (res_ptr){
-filas = mysql_num_rows (res_ptr);
-columnas = mysql_num_fields(res_ptr);
-while (campo = mysql_fetch_field(res_ptr)){
-printf("%15s",campo->name);
-}
-printf ("\n");
 
-for(i=1; i<=filas; i++){
-res_fila = mysql_fetch_row(res_ptr);
-for(j=0; j<columnas; j++){
-printf("%15s", res_fila[j]);
+void mostrarTabla(MYSQL *conexion, char *consulta) {
+    int error, filas, columnas, i, j;
+    MYSQL_RES *res_ptr;
+    MYSQL_FIELD *campo;
+    MYSQL_ROW res_fila;
+
+    error = mysql_query(conexion, consulta);
+
+    if (!error) {
+        res_ptr = mysql_store_result(conexion);
+
+        if (res_ptr) {
+            filas = mysql_num_rows(res_ptr);
+            columnas = mysql_num_fields(res_ptr);
+
+            while (campo = mysql_fetch_field(res_ptr)) {
+                printf("%-15s", campo->name);
+            }
+            printf("\n");
+
+            for (i = 1; i <= filas; i++) {
+                res_fila = mysql_fetch_row(res_ptr);
+
+                for (j = 0; j < columnas; j++) {
+                    printf("%-15s", res_fila[j]);
+                }
+                printf("\n");
+            }
+        } else {
+            printf("Error al obtener resultado\n");
+        }
+    } else {
+        printf("Ocurrió un error al ejecutar la consulta SQL\n");
+    }
 }
-printf("\n");
-}
-}
-else{
-printf("error al obtener resultado\n");
-}
-}
-else{
-printf("Ocurrio un error al ejecutar la consulta SQL\n");
-}
-}
+
 
 int conectar(MYSQL **conexion);
 int menu();
@@ -58,17 +63,19 @@ int main(int argc, char *argv[]){
 int error_conexion, id, id_res, columnas;
 unsigned long length[7];
 int codigo_ingreso, codigo_historia_clinica,codigo_medico ;
+
 char nombre_paciente[TAM_CADENA],apellido_paciente[TAM_CADENA],
 telefono[TAM_CADENA],documento_identidad[TAM_CADENA], sexo[TAM_CADENA],
  ciudad[TAM_CADENA], nombre[TAM_CADENA], apellido[TAM_CADENA], 
  especialidad[TAM_CADENA], fecha_ingreso[TAM_CADENA],  
  diagnostico[TAM_CADENA],tarjeta_profesional[TAM_CADENA], 
  no_piso[TAM_CADENA], no_cama[TAM_CADENA], costo_tratamiento[TAM_CADENA];
-bool is_null[7], error[7];    
+
+bool is_null[7], error[7]; 
+   
     MYSQL *conexion;
     MYSQL_STMT *stmt;
     MYSQL_BIND bind[7];
-    //int error_conexion, opcion;
 	MYSQL_RES *res_ptr;
 	MYSQL_FIELD *campo;
     error_conexion = conectar(&conexion);
@@ -405,7 +412,7 @@ int op, op2, op3;
 						bind[2].length = &length[2];
 												
 						bind[3].buffer_type = MYSQL_TYPE_STRING;
-						bind[3].buffer = (char *) &no_cama;
+						bind[3].buffer = (char *) no_cama;
 						bind[3].buffer_length = TAM_CADENA;
 						bind[3].is_null=0;
 						bind[3].length = &length[3];
@@ -436,6 +443,7 @@ int op, op2, op3;
 							length[5] = strlen(diagnostico);
 							printf("Ingrese Costo del tratamiento: "); scanf("%s", &costo_tratamiento);
 							length[6] = strlen(costo_tratamiento);
+							
 							if(!mysql_stmt_execute(stmt)){
 								if(mysql_stmt_affected_rows(stmt) > 0)
 										printf("Registro Insertado exitosamente\n");
@@ -450,10 +458,10 @@ int op, op2, op3;
 						printf("Error al preparar la sentencia. \n");
 					break;
 				case 2://ACTUALIZAR
-					if (!mysql_stmt_prepare(stmt, QUERY_ACTUALIZAR_PACIENTE, strlen (QUERY_ACTUALIZAR_PACIENTE))){
+					if (!mysql_stmt_prepare(stmt, QUERY_ACTUALIZAR_INGRESO, strlen (QUERY_ACTUALIZAR_INGRESO))){
 						memset(bind, 0, sizeof(bind));
 						bind[0].buffer_type = MYSQL_TYPE_STRING;
-						bind[0].buffer = (char *) telefono;
+						bind[0].buffer = (char *) no_cama;
 						bind[0].buffer_length = TAM_CADENA;
 						bind[0].is_null = 0;
 						bind[0].length = &length[0];						
@@ -463,8 +471,8 @@ int op, op2, op3;
 						bind[1].length = 0;
 						if (!mysql_stmt_bind_param(stmt, bind)){
 							printf("Ingrese codigo_historia_clinica: "); scanf("%d", &codigo_historia_clinica);
-							printf("Ingrese telefono: "); scanf("%s", &telefono);
-							length[0] = strlen(telefono);
+							printf("Ingrese numero de cama: "); scanf("%s", &no_cama);
+							length[0] = strlen(no_cama);
 							if(!mysql_stmt_execute(stmt)){
 								if (mysql_stmt_affected_rows(stmt) > 0)
 									printf("Registro actualizado exitosamente\n");
@@ -480,7 +488,7 @@ int op, op2, op3;
 					printf("Error al preparar la sentencia. \n");
 				break;	    
 					case 3://eliminar
-						if(!mysql_stmt_prepare(stmt, QUERY_ELIMINAR_PACIENTE, strlen(QUERY_ELIMINAR_PACIENTE) )){
+						if(!mysql_stmt_prepare(stmt, QUERY_ELIMINAR_INGRESO, strlen(QUERY_ELIMINAR_INGRESO) )){
 							memset (bind, 0, sizeof(bind));
 							bind[0].buffer_type = MYSQL_TYPE_LONG;
 							bind[0].buffer = (int *) &codigo_historia_clinica;
@@ -503,7 +511,7 @@ int op, op2, op3;
 				break;
 						
                     case 4:
-                        // Mostrar tabla paciente
+                        // Mostrar tabla ingreso
                         mostrarTabla(conexion, QUERY_MOSTRAR_INGRESO);
                         break;
                     case 5:
